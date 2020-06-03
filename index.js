@@ -1,55 +1,26 @@
 const http = require('http');
-const fs =require('fs');
-const path = require('path');
-
+const express = require('express');
+const morgan  =  require('morgan');
+const bodyParser = require('body-parser')
+const dishesRouter = require('./routes/dishesRouter')
 const hostname = 'localhost';
 const port = 3000;
-const server = http.createServer((req,res) =>{
-    console.log("Request for "+ req.url + " by methdod " + req.method);
 
+const app = express();
+app.use(morgan('dev'));
 
-    if(req.method == 'GET') {
-        var fileUrl;
-        if(req.url == '/') {
-            fileUrl = '/index.html';
-        }
-        else {
-            fileUrl = req.url;
-        }
-        console.log(fileUrl);
-        var filePath = path.resolve('./public' + fileUrl);
-        console.log(filePath);
-        const fileExt = path.extname(filePath);
-        console.log(fileExt);
-        if(fileExt == '.html') {
-            fs.exists(filePath, (exists) =>{
-                if(!exists) {
-                    res.statusCode = 404;
-                    res.setHeader('Content-Type', 'text/html');
-                    res.end('<html><body><h1> Error 404:' + fileUrl + 'not found</h1></body></html>');
-                    return ;
-                }
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'text/html');
-                fs.createReadStream(filePath).pipe(res);
-            })
-        }
-        else {
-            res.statusCode = 404;
-            res.setHeader('Content-Type', 'text/html');
-            res.end('<html><body><h1> Error 404:' + fileUrl + 'not an html file</h1></body></html>');
-            return ;
+app.use(bodyParser.json());
 
-        }
-    }
-    else {
-        res.statusCode = 404;
-        res.setHeader('Content-Type', 'text/html');
-        res.end('<html><body><h1> Error 404:' + req.method + 'not supported</h1></body></html>');
-        return ;
-    }
-})
+app.use('/dishes', dishesRouter)
+app.use(express.static(__dirname + '/public'));
+app.use((req, res, next) => {
+    
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'text/html');
+    res.end('<html><body><h1>This is an express application</h1></body></html>')
+});
 
-server.listen(port, hostname, () => {
-    console.log(`Server running at http://${hostname}:${port}`);
+const server = http.createServer(app);
+server.listen(port, hostname, () =>{
+    console.log(`Server running at http://${hostname}:${port}`)
 });
